@@ -1,5 +1,6 @@
-# Queries
+from psycopg2.extras import execute_values
 
+# Queries
 CREATE_POLLS = """CREATE TABLE IF NOT EXISTS polls(
     id SERIAL PRIMARY KEY,
     title TEXT,
@@ -27,6 +28,15 @@ SELECT_POLL_WITH_OPTIONS = """SELECT *
     ON polls.id = options.poll_id 
     WHERE polls.id = %s;"""
 
+SELECT_LATEST_POLL = """SELECT *
+    FROM polls
+    JOIN options
+    ON polls.id = options.poll_id
+    WHERE polls.id = (SELECT id FROM polls ORDER BY id DESC LIMIT 1);"""
+
+INSERT_POLL_RETURN_ID = """INSERT INTO polls(title, owner_username)
+    VALUES (%s, %s) RETURNING id;"""
+
 INSERT_OPTION = """INSERT INTO options(option_text, poll_id) 
     VALUES (%s, %s);"""
 
@@ -45,8 +55,22 @@ def create_tables(connection):
 
 
 def create_poll(connection, title, owner, options):
-    pass
+    with connection:
+        with connection.cursor() as cursor:
+            # cursor will have the id of the new poll
+            cursor.execute(INSERT_POLL_RETURN_ID, (title, owner))
 
+            # Fetch from the cursor the id of the new poll
+            ID = 0
+            poll_id = cursor.fetchone()[ID]
+
+            # Create list of tuple containing info for each option
+            option_values = [(option_text, poll_id) for option_text in options]
+
+            # Psycopg2 helper method to execute multiple queries at once. This
+            # method will execute INSERT_OPTION for each tuple in the option_va
+            # lue using the cursor we created.
+            execute_values(cursor, INSERT_OPTION, option_values)
 
 def add_poll_vote(connection, username, option_id):
     with connection:
@@ -62,7 +86,10 @@ def get_polls(connection):
 
 
 def get_latest_poll(connection):
-    pass
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(SELECT_LATEST_POLL)
+            return cursor.fetchall()
 
 
 def get_polls_details(connection, poll_id):
