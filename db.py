@@ -43,8 +43,10 @@ SELECT_RANDOM_VOTE = """SELECT *
 SELECT_POLL_VOTE_DETAILS = """SELECT
     options.id,
     options.option_text,
-    COUNT(votes.option_id) AS vote_count,
-    vote_count / SUM(vote_count) OVER() * 100.0 AS vote_percentage,
+    COUNT(votes.option_id) 
+    AS vote_count,
+    COUNT(votes.option_id) / SUM(COUNT(votes.option_id)) OVER() * 100.0 
+    AS vote_percentage
     FROM options
     LEFT JOIN votes
     ON options.id = votes.option_id
@@ -55,7 +57,7 @@ INSERT_POLL_RETURN_ID = """INSERT INTO polls(title, owner_username)
     VALUES (%s, %s) RETURNING id;"""
 
 INSERT_OPTION = """INSERT INTO options(option_text, poll_id) 
-    VALUES (%s, %s);"""
+    VALUES %s;"""
 
 INSERT_VOTE = """INSERT INTO votes(username, option_id)
     VALUES (%s, %s);"""
