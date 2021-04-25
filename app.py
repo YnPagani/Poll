@@ -1,5 +1,5 @@
 import random
-from connections import create_connection
+from connections import pool
 from models.option import Option
 from models.poll import Poll
 import db
@@ -87,7 +87,7 @@ MENU_OPTIONS = {
 
 
 def menu():
-    connection = create_connection()
+    connection = pool.putconn()
     db.create_tables(connection)
 
     while (selection := input(MENU_PROMPT)) != "6":
