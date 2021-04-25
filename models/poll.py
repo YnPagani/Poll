@@ -22,6 +22,7 @@ class Poll:
     def add_option(self, option_text: str):
         Option(option_text, self.id).save()
 
+    @property
     def options(self) -> List[Option]:
         connection = create_connection()
         options = db.get_poll_options(connection, self.id)
